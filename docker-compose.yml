@@ -1,0 +1,40 @@
+version: "3.9"
+
+services:
+
+  # Configure the webserver container
+  web:
+    build: backend/
+    container_name: web-tofu
+    volumes:
+      - './backend:/code'
+      - './secrets:/secrets'
+    restart: unless-stopped
+    ports:
+      - "8001:4000"
+    links:
+      - db
+
+  # Configure the database container
+  db:
+    image: mysql:8
+    container_name: db-tofu
+    volumes:
+        - ./db/init.sql:/data/application/init.sql
+    ports:
+      - "3200:3306"
+    restart: unless-stopped
+    environment:
+      MYSQL_USER: tofu_db_user
+      MYSQL_PASSWORD_FILE: /run/secrets/secret_db_pw
+      MYSQL_ROOT_PASSWORD_FILE: /run/secrets/secret_db_root_pw
+    secrets:
+      - secret_db_pw
+      - secret_db_root_pw
+    command: --init-file /data/application/init.sql
+
+secrets:
+  secret_db_pw:
+    file: ./secrets/db_password.txt
+  secret_db_root_pw:
+    file: ./secrets/db_root_password.txt
